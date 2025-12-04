@@ -1,7 +1,6 @@
 package turso_libs
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/ebitengine/purego"
@@ -15,10 +14,8 @@ var (
 func TestLoad(t *testing.T) {
 	t.Log(libraryFilename())
 	t.Log(embeddedLibraryPath())
+
 	library, err := LoadTursoLibrary(LoadTursoLibraryConfig{LoadStrategy: "system"})
-	if err != nil && strings.Contains(err.Error(), "not found") {
-		t.Skipf("no library found")
-	}
 	require.Nil(t, err)
 
 	purego.RegisterLibFunc(&turso_version, library, "turso_version")

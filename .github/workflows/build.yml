@@ -33,8 +33,10 @@ jobs:
           - os: windows-11-arm
           - os: ubuntu-latest
             container: alpine:latest
+            musl_tag: true
             name_suffix: " (Alpine x64)"
           - os: ubuntu-24.04-arm
+            musl_tag: true
             build_musl: true
             name_suffix: " (musl cross-compile)"
 
@@ -50,6 +52,11 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           source $HOME/.cargo/env
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: setup go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -91,16 +98,13 @@ jobs:
           echo "After build, libs/ contains:"
           find libs -maxdepth 3 -type f || true
 
-      - name: setup go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: 'go.mod'
+      - name: run test
+        if: matrix.musl_tag == true
+        run: go test --tags musl ./... -v
 
       - name: run test
-        run: |
-          out="$(go test ./... -v)"
-          echo "$out"
-          echo "$out" | grep turso_version
+        if: matrix.musl_tag != true
+        run: go test ./... -v
 
       - name: Upload platform artifact
         uses: actions/upload-artifact@v4

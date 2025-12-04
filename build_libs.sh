@@ -18,12 +18,8 @@ CARGO_ARGS=(--profile $TURSO_RS_BUILD_PROFILE)
 UNAME_S="$(uname -s)"
 UNAME_M="$(uname -m)"
 
-case "$UNAME_M" in
-  x86_64) ARCH=amd64 ;;
-  arm64|aarch64) ARCH=arm64 ;;
-  i386|i686) ARCH=386 ;;
-  *) echo "Unsupported arch: $UNAME_M"; exit 1 ;;
-esac
+echo "UNAME_S: $UNAME_S"
+echo "UNAME_M: $UNAME_M"
 
 case "$UNAME_S" in
   Linux*)  OS=linux  ;;
@@ -32,6 +28,20 @@ case "$UNAME_S" in
   *) echo "Unsupported OS: $UNAME_S"; exit 1 ;;
 esac
 
+if [[ "$OS" == "windows" ]]; then
+  case "$UNAME_S" in
+    *ARM64)  ARCH=arm64  ;;
+    *) ARCH=amd64 ;;
+  esac
+else
+  # cygwin reports x86_64 even for windows on ARM
+  case "$UNAME_M" in
+    x86_64) ARCH=amd64 ;;
+    arm64|aarch64) ARCH=arm64 ;;
+    i386|i686) ARCH=386 ;;
+    *) echo "Unsupported arch: $UNAME_M"; exit 1 ;;
+  esac
+fi
 
 # Detect libc variant on Linux
 if [[ "$TURSO_RS_LIBC_VARIANT" == "" ]];
