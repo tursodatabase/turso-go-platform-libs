@@ -75,7 +75,8 @@ jobs:
         if: matrix.build_musl == true
         run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools gcc-aarch64-linux-gnu
+          sudo apt-get install -y musl-tools musl-dev
+          sudo apt-get install -y gcc-aarch64-linux-musl
 
       - name: Cache cargo
         if: matrix.container != 'alpine:latest'
