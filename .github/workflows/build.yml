@@ -6,10 +6,13 @@ on:
       turso_ref:
         description: 'turso ref (tag or branch)'
         required: true
+      push_changes:
+        description: 'turso ref (tag or branch)'
+        required: true
+        type: boolean
 
 permissions:
   contents: write
-  pull-requests: write
 
 concurrency:
   group: build-libs-${{ github.event.inputs.turso_ref }}
@@ -32,7 +35,6 @@ jobs:
             container: alpine:latest
             name_suffix: " (Alpine x64)"
           - os: ubuntu-24.04-arm
-            build_musl: true
             name_suffix: " (musl cross-compile)"
 
     runs-on: ${{ matrix.os }}
@@ -82,20 +84,7 @@ jobs:
         if: runner.os != 'Windows'
         run: chmod +x ./build_libs.sh
 
-      - name: Build cdylib (release) - musl cross-compile
-        if: matrix.build_musl == true
-        shell: bash
-        run: |
-          # Force musl build
-          export CARGO_ARGS="--release --target aarch64-unknown-linux-musl"
-          cargo build --release --target aarch64-unknown-linux-musl --package turso-go
-          mkdir -p libs/linux_musl_arm64
-          cp target/aarch64-unknown-linux-musl/release/libturso_go.a libs/linux_musl_arm64/
-          echo "After build, libs/ contains:"
-          find libs -maxdepth 2 -type f || true
-
       - name: Build cdylib (release)
-        if: matrix.build_musl != true
         shell: bash
         run: |
           TURSO_RS_BUILD_REF=${{ github.event.inputs.turso_ref }} ./build_libs.sh
@@ -123,6 +112,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: _libs_artifacts
+          merge-multiple: true
 
       - name: Merge platform folders into repo
         shell: bash
@@ -161,3 +151,46 @@ jobs:
           ./hash_libs.sh
           echo "After hash, libs/ contains:"
           find libs -maxdepth 3 -type f || true
+
+      - name: Create / update prebuilt-libs branch and push
+        if: github.event.inputs.push_changes == 'true'
+        shell: bash
+        env:
+          TURSO_REF: ${{ github.event.inputs.turso_ref }}
+        run: |
+          set -euo pipefail
+
+          # Determine branch name based on ref type
+          if [[ "$TURSO_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([\-+][0-9A-Za-z\.-]+)?$ ]]; then
+            BRANCH="${TURSO_REF}"
+          else
+            BRANCH="turso-branch-${TURSO_REF}"
+          fi
+
+          echo "Target branch: $BRANCH"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Try to fetch existing branch if present
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo "Branch $BRANCH exists on remote — checking it out."
+            git fetch origin "$BRANCH":"$BRANCH"
+            git checkout "$BRANCH"
+          else
+            echo "Branch $BRANCH does not exist — creating it."
+            git checkout -b "$BRANCH"
+          fi
+
+          echo "Staging changes..."
+          git add libs
+
+          if git diff --cached --quiet; then
+            echo "No staged changes, skipping push."
+            exit 0
+          fi
+
+          git commit -m "Update prebuilt libs for ref: ${TURSO_REF}"
+
+          echo "Pushing branch: $BRANCH"
+          git push --set-upstream origin "$BRANCH"
