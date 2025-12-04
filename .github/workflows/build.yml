@@ -2,9 +2,9 @@ name: Build & Publish Prebuilt Libraries
 
 on:
   workflow_dispatch:
-      inputs:
+    inputs:
       turso_ref:
-        description: 'turso ref (tag, branch or commit hash)'
+        description: 'turso ref (tag or branch)'
         required: true
 
 permissions:
