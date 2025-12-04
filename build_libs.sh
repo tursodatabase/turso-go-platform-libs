@@ -13,7 +13,7 @@ if [[ "$TURSO_RS_BUILD_REF" == "" ]]; then
     exit 1
 fi
 
-CARGO_ARGS=(--profile $TURSO_RS_BUILD_PROFILE)
+CARGO_ARGS_ARR=(--profile $TURSO_RS_BUILD_PROFILE)
 
 UNAME_S="$(uname -s)"
 UNAME_M="$(uname -m)"
@@ -91,7 +91,7 @@ if [[ "$TURSO_RS_LIBC_VARIANT" == "_musl" ]]; then
     # Assume the musl target is already available or will be handled by cargo
     echo "rustup not found, assuming $RUST_TARGET is available"
   fi
-  CARGO_ARGS+=("--target" "$RUST_TARGET")
+  CARGO_ARGS_ARR+=("--target" "$RUST_TARGET")
 fi
 
 # Determine output directory (changes when using --target)
@@ -106,7 +106,7 @@ echo "TURSO_RS_REPO: $TURSO_RS_REPO"
 echo "TURSO_RS_BUILD_REF: $TURSO_RS_BUILD_REF"
 echo "TURSO_RS_BUILD_DIR: $TURSO_RS_BUILD_DIR"
 echo "TURSO_RS_PACKAGE: $TURSO_RS_PACKAGE"
-echo "CARGO_ARGS: ${CARGO_ARGS[@]}"
+echo "CARGO_ARGS_ARR: ${CARGO_ARGS_ARR[@]}"
 echo "CARGO_OUT_DIR: $CARGO_OUT_DIR"
 echo "CARGO_LIB_PATH: $CARGO_LIB_PATH"
 echo "TURSO_GO_LIB_PATH: $TURSO_GO_LIB_PATH"
@@ -115,7 +115,8 @@ git clone --single-branch --depth 1 --branch $TURSO_RS_BUILD_REF $TURSO_RS_REPO 
 
 pushd $TURSO_RS_BUILD_DIR
 echo "Building ${TURSO_RS_PACKAGE} ($TURSO_RS_BUILD_PROFILE) for ${PLATFORM}"
-cargo build "${CARGO_ARGS[@]}" --package "${TURSO_RS_PACKAGE}"
+export CARGO_ARGS="${CARGO_ARGS_ARR[@]}"
+cargo build "${CARGO_ARGS_ARR[@]}" --package "${TURSO_RS_PACKAGE}"
 popd
 
 

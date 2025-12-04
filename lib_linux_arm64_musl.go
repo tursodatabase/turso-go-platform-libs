@@ -4,5 +4,5 @@ package turso_libs
 
 import "embed"
 
-//go:embed libs/linux_arm64/*
+//go:embed libs/linux_arm64_musl/*
 var libs embed.FS

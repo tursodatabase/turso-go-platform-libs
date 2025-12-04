@@ -76,11 +76,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y musl-tools gcc-aarch64-linux-gnu
-          rustup target add aarch64-unknown-linux-musl
-
-      - name: Add musl target
-        if: matrix.build_musl == true
-        run: rustup target add aarch64-unknown-linux-musl
 
       - name: Cache cargo
         if: matrix.container != 'alpine:latest'

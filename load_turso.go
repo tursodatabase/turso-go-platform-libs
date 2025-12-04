@@ -103,9 +103,9 @@ func libraryFilename() (string, error) {
 
 func embeddedLibraryPath() (string, error) {
 	if runtime.GOOS == "linux" && isMuslLibc() {
-		return fmt.Sprintf("libs/%v_%v_musl", runtime.GOOS, runtime.GOARCH), nil
+		return filepath.Join("libs", fmt.Sprintf("%v_%v_musl", runtime.GOOS, runtime.GOARCH)), nil
 	}
-	return fmt.Sprintf("libs/%v_%v", runtime.GOOS, runtime.GOARCH), nil
+	return filepath.Join("libs", fmt.Sprintf("%v_%v", runtime.GOOS, runtime.GOARCH)), nil
 }
 
 func embeddedLibraryHash() string {
