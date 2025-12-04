@@ -1,4 +1,4 @@
-//go:build linux && arm64 && !musl
+//go:build linux && arm64 && musl
 
 package turso_libs
 

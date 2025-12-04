@@ -7,7 +7,7 @@ on:
         description: 'turso ref (tag or branch)'
         required: true
       push_changes:
-        description: 'turso ref (tag or branch)'
+        description: 'push changes to the repo'
         required: true
         type: boolean
 
@@ -35,6 +35,7 @@ jobs:
             container: alpine:latest
             name_suffix: " (Alpine x64)"
           - os: ubuntu-24.04-arm
+            build_musl: true
             name_suffix: " (musl cross-compile)"
 
     runs-on: ${{ matrix.os }}
@@ -69,10 +70,6 @@ jobs:
         if: matrix.container != 'alpine:latest'
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Add musl target
-        if: matrix.build_musl == true
-        run: rustup target add aarch64-unknown-linux-musl
-
       - name: Cache cargo
         if: matrix.container != 'alpine:latest'
         uses: Swatinem/rust-cache@v2
@@ -90,6 +87,14 @@ jobs:
           TURSO_RS_BUILD_REF=${{ github.event.inputs.turso_ref }} ./build_libs.sh
           echo "After build, libs/ contains:"
           find libs -maxdepth 3 -type f || true
+
+      - name: setup go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+
+      - name: run test
+        run: go test ./...
 
       - name: Upload platform artifact
         uses: actions/upload-artifact@v4
