@@ -1,0 +1,163 @@
+name: Build & Publish Prebuilt Libraries
+
+on:
+  workflow_dispatch:
+      inputs:
+      turso_ref:
+        description: 'turso ref (tag, branch or commit hash)'
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: build-libs-${{ github.event.inputs.turso_ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }}${{ matrix.name_suffix || '' }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
+          - os: macos-14
+          - os: macos-13
+          - os: windows-latest
+          - os: windows-11-arm
+          - os: ubuntu-latest
+            container: alpine:latest
+            name_suffix: " (Alpine x64)"
+          - os: ubuntu-24.04-arm
+            build_musl: true
+            name_suffix: " (musl cross-compile)"
+
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+
+    steps:
+      - name: Install Alpine dependencies
+        if: matrix.container == 'alpine:latest'
+        run: |
+          apk add --no-cache bash curl gcc musl-dev git
+          # Install Rust
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clean libs dir
+        shell: bash
+        run: rm -rf libs && mkdir -p libs
+
+      - name: Install musl tools for cross-compile
+        if: matrix.build_musl == true
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
+      - name: Set up Rust
+        if: matrix.container != 'alpine:latest'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Add musl target
+        if: matrix.build_musl == true
+        run: rustup target add aarch64-unknown-linux-musl
+
+      - name: Cache cargo
+        if: matrix.container != 'alpine:latest'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+
+      - name: Make script executable (POSIX)
+        if: runner.os != 'Windows'
+        run: chmod +x ./build_libs.sh
+
+      - name: Build cdylib (release) - musl cross-compile
+        if: matrix.build_musl == true
+        shell: bash
+        run: |
+          # Force musl build
+          export CARGO_ARGS="--release --target aarch64-unknown-linux-musl"
+          cargo build --release --target aarch64-unknown-linux-musl --package turso-go
+          mkdir -p libs/linux_musl_arm64
+          cp target/aarch64-unknown-linux-musl/release/libturso_go.a libs/linux_musl_arm64/
+          echo "After build, libs/ contains:"
+          find libs -maxdepth 2 -type f || true
+
+      - name: Build cdylib (release)
+        if: matrix.build_musl != true
+        shell: bash
+        run: |
+          TURSO_RS_BUILD_REF=${{ github.event.inputs.turso_ref }} ./build_libs.sh
+          echo "After build, libs/ contains:"
+          find libs -maxdepth 3 -type f || true
+
+      - name: Upload platform artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.name_suffix || '' }}
+          path: libs/**/*
+          if-no-files-found: error
+
+  publish:
+    name: Aggregate & PR commit
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: _libs_artifacts
+
+      - name: Merge platform folders into repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          mkdir -p libs
+          echo "Downloaded artifact roots:"
+          for d in _libs_artifacts/*; do
+            [ -d "$d" ] && echo " - $(basename "$d")"
+          done
+          for src in _libs_artifacts/*; do
+            [ -d "$src" ] || continue
+            plat="$(basename "$src")"
+            dest="libs/$plat"
+            echo "Syncing $src -> $dest"
+            mkdir -p "$dest"
+            rsync -a "$src"/ "$dest"/
+          done
+
+          echo "Merged libs layout:"
+          for f in libs/*/*; do [ -f "$f" ] && echo "$f"; done
+
+      - name: Skip if no libs changed
+        shell: bash
+        run: |
+          git add -N libs || true
+          if git diff --quiet -- libs ; then
+            echo "No changes under libs/; skipping PR."
+            exit 0
+          fi
+
+      - name: Generate & print SHA256 sums
+        shell: bash
+        run: |
+          ./hash_libs.sh
+          echo "After hash, libs/ contains:"
+          find libs -maxdepth 3 -type f || true

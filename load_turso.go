@@ -89,9 +89,13 @@ func libraryFilename() (string, error) {
 	case "darwin":
 		return "libturso_sync_sdk_kit.dylib", nil
 	case "linux":
-		return "libturso_sync_sdk_kit.so", nil
+		if isMuslLibc() {
+			return "libturso_sync_sdk_kit.a", nil
+		} else {
+			return "libturso_sync_sdk_kit.so", nil
+		}
 	case "windows":
-		return "libturso_sync_sdk_kit.dll", nil
+		return "turso_sync_sdk_kit.dll", nil
 	default:
 		return "", fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
