@@ -77,6 +77,10 @@ jobs:
         if: matrix.container != 'alpine:latest'
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Add musl target
+        if: matrix.build_musl == true
+        run: rustup target add aarch64-unknown-linux-musl
+
       - name: Cache cargo
         if: matrix.container != 'alpine:latest'
         uses: Swatinem/rust-cache@v2

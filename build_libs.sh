@@ -109,6 +109,7 @@ echo "TURSO_RS_PACKAGE: $TURSO_RS_PACKAGE"
 echo "CARGO_ARGS: ${CARGO_ARGS[@]}"
 echo "CARGO_OUT_DIR: $CARGO_OUT_DIR"
 echo "CARGO_LIB_PATH: $CARGO_LIB_PATH"
+echo "TURSO_GO_LIB_PATH: $TURSO_GO_LIB_PATH"
 
 git clone --single-branch --depth 1 --branch $TURSO_RS_BUILD_REF $TURSO_RS_REPO $TURSO_RS_BUILD_DIR
 
@@ -128,4 +129,4 @@ fi
 mkdir -p "${TURSO_GO_LIB_PATH}"
 cp -f "${CARGO_LIB_PATH}" "${TURSO_GO_LIB_PATH}/"
 
-echo "Wrote ${TURSO_GO_LIB_PATH}/$(basename $CARGO_LIB_PATH)"
+echo "Wrote $(pwd)/${TURSO_GO_LIB_PATH}/$(basename $CARGO_LIB_PATH)"
