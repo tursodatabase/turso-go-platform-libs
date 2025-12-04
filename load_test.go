@@ -13,13 +13,15 @@ var (
 )
 
 func TestLoad(t *testing.T) {
+	t.Log(libraryFilename())
+	t.Log(embeddedLibraryPath())
 	library, err := LoadTursoLibrary(LoadTursoLibraryConfig{LoadStrategy: "system"})
-	if err != nil && strings.Contains(err.Error(), "library file libturso_sync_sdk_kit.so not found") {
+	if err != nil && strings.Contains(err.Error(), "not found") {
 		t.Skipf("no library found")
 	}
 	require.Nil(t, err)
 
 	purego.RegisterLibFunc(&turso_version, library, "turso_version")
-	t.Log(turso_version())
+	t.Log("turso_version", turso_version())
 	require.NotEmpty(t, turso_version())
 }

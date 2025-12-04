@@ -84,6 +84,9 @@ jobs:
       - name: Build cdylib (release)
         shell: bash
         run: |
+          if [[ "${{ matrix.build_musl }}" == "true" ]]; then
+            export TURSO_RS_LIBC_VARIANT="_musl"
+          fi
           TURSO_RS_BUILD_REF=${{ github.event.inputs.turso_ref }} ./build_libs.sh
           echo "After build, libs/ contains:"
           find libs -maxdepth 3 -type f || true
@@ -94,7 +97,10 @@ jobs:
           go-version-file: 'go.mod'
 
       - name: run test
-        run: go test ./...
+        run: |
+          out="$(go test ./... -v)"
+          echo "$out"
+          echo "$out" | grep turso_version
 
       - name: Upload platform artifact
         uses: actions/upload-artifact@v4

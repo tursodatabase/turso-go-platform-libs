@@ -47,12 +47,8 @@ then
     fi
 fi
 
-TURSO_GO_LIB_PATH="${TURSO_GO_LIB_DIR}/${OS}_${ARCH}"
-if [[ "$TURSO_RS_LIBC_VARIANT" == "_musl" ]]; then
-    TURSO_GO_LIB_PATH="${TURSO_GO_LIB_PATH}/musl"
-fi
-
-PLATFORM="${OS}${TURSO_RS_LIBC_VARIANT}_${ARCH}"
+PLATFORM="${OS}_${ARCH}${TURSO_RS_LIBC_VARIANT}"
+TURSO_GO_LIB_PATH="${TURSO_GO_LIB_DIR}/${PLATFORM}"
 
 case "$OS" in
   linux)
@@ -107,7 +103,7 @@ echo "CARGO_LIB_PATH: $CARGO_LIB_PATH"
 git clone --single-branch --depth 1 --branch $TURSO_RS_BUILD_REF $TURSO_RS_REPO $TURSO_RS_BUILD_DIR
 
 pushd $TURSO_RS_BUILD_DIR
-echo "Building ${TURSO_RS_PACKAGE} ($TURSO_RS_BUILD_PROFILE) for ${PLATFORM}…"
+echo "Building ${TURSO_RS_PACKAGE} ($TURSO_RS_BUILD_PROFILE) for ${PLATFORM}"
 cargo build "${CARGO_ARGS[@]}" --package "${TURSO_RS_PACKAGE}"
 popd
 
