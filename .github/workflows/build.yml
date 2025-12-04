@@ -30,7 +30,6 @@ jobs:
           - os: macos-14
           - os: macos-13
           - os: windows-latest
-          - os: windows-11-arm
           - os: ubuntu-latest
             container: alpine:latest
             musl_tag: true
@@ -77,6 +76,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y musl-tools musl-dev
           sudo apt-get install -y gcc-aarch64-linux-musl
+          rustup target add aarch64-unknown-linux-musl
 
       - name: Cache cargo
         if: matrix.container != 'alpine:latest'
@@ -91,6 +91,7 @@ jobs:
 
       - name: Build cdylib (release)
         shell: bash
+        if: runner.os != 'Windows'
         run: |
           if [[ "${{ matrix.build_musl }}" == "true" ]]; then
             export TURSO_RS_LIBC_VARIANT="_musl"
@@ -101,13 +102,24 @@ jobs:
 
           echo "After build, libs/ contains:"
           find libs -maxdepth 3 -type f || true
+      
+      - name: Build cdylib (release)
+        shell: bash
+        if: runner.os == 'Windows'
+        run: |
+          ./build_libs.cmd
+          ./hash_libs.cmd
 
       - name: run test
         if: matrix.musl_tag == true
+        env:
+          TURSO_GO_NOCACHE: 1
         run: go test --tags musl ./... -v
 
       - name: run test
         if: matrix.musl_tag != true
+        env:
+          TURSO_GO_NOCACHE: 1
         run: go test ./... -v
 
       - name: Upload platform artifact
