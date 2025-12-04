@@ -10,13 +10,13 @@ calc() {
     echo "No SHA-256 tool available" >&2; exit 1
   fi
 }
-: > libs/MANIFEST-SHA256.txt
+
 echo "SHA256 checksums:"
 shopt -s nullglob
 for f in $(find ./libs -type f -name "*.so" -o -name "*.a" -o -name "*.dylib" -o -name "*.dll"); do
   sum="$(calc "$f")"
   rel="${f#libs/}"
-  printf "%s  %s\n" "$sum" "$rel" | tee -a libs/MANIFEST-SHA256.txt
+  printf "%s  %s\n" "$sum" "$rel"
   printf "%s\n" "$sum" > "${f}.sha256"
 done
-echo "Wrote libs/MANIFEST-SHA256.txt and per-file .sha256 sidecars."
+echo "Wrote per-file .sha256 sidecars."

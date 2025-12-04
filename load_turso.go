@@ -121,7 +121,7 @@ func embeddedLibraryHash() string {
 	if err != nil {
 		return ""
 	}
-	return string(hash)
+	return strings.TrimSpace(string(hash))
 }
 
 func embeddedLibraryOpen() (fs.File, error) {

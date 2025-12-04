@@ -15,7 +15,7 @@ func TestLoad(t *testing.T) {
 	t.Log(libraryFilename())
 	t.Log(embeddedLibraryPath())
 
-	library, err := LoadTursoLibrary(LoadTursoLibraryConfig{LoadStrategy: "system"})
+	library, err := LoadTursoLibrary(LoadTursoLibraryConfig{LoadStrategy: "mixed"})
 	require.Nil(t, err)
 
 	purego.RegisterLibFunc(&turso_version, library, "turso_version")

@@ -99,6 +99,9 @@ jobs:
             export TURSO_RS_LIBC_VARIANT="_musl"
           fi
           TURSO_RS_BUILD_REF=${{ github.event.inputs.turso_ref }} ./build_libs.sh
+
+          ./hash_libs.sh
+
           echo "After build, libs/ contains:"
           find libs -maxdepth 3 -type f || true
 
@@ -163,13 +166,6 @@ jobs:
             echo "No changes under libs/; skipping PR."
             exit 0
           fi
-
-      - name: Generate & print SHA256 sums
-        shell: bash
-        run: |
-          ./hash_libs.sh
-          echo "After hash, libs/ contains:"
-          find libs -maxdepth 3 -type f || true
 
       - name: Create / update prebuilt-libs branch and push
         if: github.event.inputs.push_changes == 'true'
