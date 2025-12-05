@@ -36,7 +36,7 @@ jobs:
             name_suffix: " (Alpine AMD64)"
           - os: ubuntu-24.04-arm
             musl_tag: true
-            alpine_container: true
+            manual_container: true
             name_suffix: " (Alpine ARM64)"
 
     runs-on: ${{ matrix.os }}
@@ -48,12 +48,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Alpine dependencies
+        if: matrix.container == 'alpine:latest'
+        run: |
+          apk add --no-cache bash curl gcc musl-dev git
+          # Install Rust
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
       - name: Clean libs dir
         shell: bash
         run: rm -rf libs && mkdir -p libs
 
       - name: Build library (container)
-        if: matrix.alpine_container == true
+        if: matrix.manual_container == true
         run: |
           docker run --rm \
             -v $PWD:/work -w /work \
@@ -66,11 +75,11 @@ jobs:
             "
 
       - name: Set up Rust (host)
-        if: matrix.alpine_container != true
+        if: matrix.manual_container != true
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo
-        if: matrix.alpine_container != true
+        if: matrix.manual_container != true
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
@@ -85,23 +94,12 @@ jobs:
           source $HOME/.cargo/env
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      - name: Set up Rust
-        if: matrix.container != 'alpine:latest'
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache cargo
-        if: matrix.container != 'alpine:latest'
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            . -> target
-
       - name: Make script executable (POSIX)
-        if: matrix.alpine_container != true && runner.os != 'Windows'
+        if: matrix.manual_container != true && runner.os != 'Windows'
         run: chmod +x ./build_libs.sh
 
       - name: Build cdylib (release)
-        if: matrix.alpine_container != true
+        if: matrix.manual_container != true
         run: |
           TURSO_RS_BUILD_REF=${{ github.event.inputs.turso_ref }} ./build_libs.sh && ./hash_libs.sh
 
@@ -111,25 +109,25 @@ jobs:
           find libs -maxdepth 3 -type f || true
 
       - name: setup go (host)
-        if: matrix.alpine_container != true
+        if: matrix.manual_container != true
         uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
 
-      - name: run test (host)
-        if: matrix.alpine_container != true && matrix.musl_tag != true
+      - name: run test (host, musl)
+        if: matrix.manual_container != true && matrix.musl_tag == true
         env:
           TURSO_GO_NOCACHE: 1
         run: go test --tags musl ./... -v
 
-      - name: run test (host)
-        if: matrix.container != true && matrix.musl_tag == true
+      - name: run test (host, glibc)
+        if: matrix.manual_container != true && matrix.musl_tag != true
         env:
           TURSO_GO_NOCACHE: 1
         run: go test ./... -v
 
-      - name: run test (container)
-        if: matrix.alpine_container == true
+      - name: run test (container, musl)
+        if: matrix.manual_container == true
         run: |
           docker run --rm \
             -v $PWD:/work -w /work \
