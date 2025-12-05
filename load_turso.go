@@ -98,7 +98,7 @@ func embeddedLibraryHash() string {
 	if err != nil {
 		return ""
 	}
-	hash, err := libs.ReadFile(fmt.Sprintf("%v.sha256", filepath.Join(root, filename)))
+	hash, err := libs.ReadFile(fmt.Sprintf("%v.sha256", path.Join(root, filename)))
 	if err != nil {
 		return ""
 	}
