@@ -107,6 +107,7 @@ jobs:
           ./hash_libs.sh
 
       - name: Check after build
+        shell: bash
         run: |
           echo "After build, libs/ contains:"
           find libs -maxdepth 3 -type f || true
