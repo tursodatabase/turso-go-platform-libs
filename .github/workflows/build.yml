@@ -35,14 +35,47 @@ jobs:
             musl_tag: true
             name_suffix: " (Alpine AMD64)"
           - os: ubuntu-24.04-arm
-            container: alpine:latest
             musl_tag: true
+            alpine_container: true
             name_suffix: " (Alpine ARM64)"
 
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clean libs dir
+        shell: bash
+        run: rm -rf libs && mkdir -p libs
+
+      - name: Build library (container)
+        if: matrix.alpine_container == true
+        run: |
+          docker run --rm \
+            -v $PWD:/work -w /work \
+            alpine:latest /bin/sh -c "
+              apk add --no-cache bash curl gcc musl-dev git build-base rustup && \
+              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+              source /root/.cargo/env && \
+              echo Building... && \
+              TURSO_RS_BUILD_REF='${{ github.event.inputs.turso_ref }}' TURSO_RS_LIBC_VARIANT='_libc' ./build_libs.sh
+            "
+
+      - name: Set up Rust (host)
+        if: matrix.alpine_container != true
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        if: matrix.alpine_container != true
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+
       - name: Install Alpine dependencies
         if: matrix.container == 'alpine:latest'
         run: |
@@ -52,31 +85,9 @@ jobs:
           source $HOME/.cargo/env
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: setup go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: 'go.mod'
-
-      - name: Clean libs dir
-        shell: bash
-        run: rm -rf libs && mkdir -p libs
-
       - name: Set up Rust
         if: matrix.container != 'alpine:latest'
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Install musl tools for cross-compile
-        if: matrix.build_musl == true
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools musl-dev
-          sudo apt-get install -y gcc-aarch64-linux-musl
-          rustup target add aarch64-unknown-linux-musl
 
       - name: Cache cargo
         if: matrix.container != 'alpine:latest'
@@ -86,34 +97,46 @@ jobs:
             . -> target
 
       - name: Make script executable (POSIX)
-        if: runner.os != 'Windows'
+        if: matrix.alpine_container != true && runner.os != 'Windows'
         run: chmod +x ./build_libs.sh
 
       - name: Build cdylib (release)
-        shell: bash
-        if: runner.os != 'Windows'
+        if: matrix.alpine_container != true
         run: |
-          if [[ "${{ matrix.build_musl }}" == "true" ]]; then
-            export TURSO_RS_LIBC_VARIANT="_musl"
-          fi
-          TURSO_RS_BUILD_REF=${{ github.event.inputs.turso_ref }} ./build_libs.sh
+          TURSO_RS_BUILD_REF=${{ github.event.inputs.turso_ref }} ./build_libs.sh && ./hash_libs.sh
 
-          ./hash_libs.sh
-
+      - name: Check after build
+        run: |
           echo "After build, libs/ contains:"
           find libs -maxdepth 3 -type f || true
 
-      - name: run test
-        if: matrix.musl_tag == true
+      - name: setup go (host)
+        if: matrix.alpine_container != true
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+
+      - name: run test (host)
+        if: matrix.alpine_container != true
         env:
           TURSO_GO_NOCACHE: 1
         run: go test --tags musl ./... -v
 
-      - name: run test
-        if: matrix.musl_tag != true
+      - name: run test (host)
+        if: matrix.container != true && matrix.musl_tag != true
         env:
           TURSO_GO_NOCACHE: 1
         run: go test ./... -v
+
+      - name: run test (container)
+        if: matrix.alpine_container == true
+        run: |
+          docker run --rm \
+            -v $PWD:/work -w /work \
+            alpine:latest /bin/sh -c "
+              apk add --no-cache go && \
+              go test --tags musl ./... -v
+            "
 
       - name: Upload platform artifact
         uses: actions/upload-artifact@v4
