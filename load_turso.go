@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -81,10 +82,11 @@ func libraryFilename() (string, error) {
 }
 
 func embeddedLibraryPath() (string, error) {
+	// go embed always uses forward slashes (even on Windows)
 	if runtime.GOOS == "linux" && isMusl {
-		return filepath.Join("libs", fmt.Sprintf("%v_%v_musl", runtime.GOOS, runtime.GOARCH)), nil
+		return path.Join("libs", fmt.Sprintf("%v_%v_musl", runtime.GOOS, runtime.GOARCH)), nil
 	}
-	return filepath.Join("libs", fmt.Sprintf("%v_%v", runtime.GOOS, runtime.GOARCH)), nil
+	return path.Join("libs", fmt.Sprintf("%v_%v", runtime.GOOS, runtime.GOARCH)), nil
 }
 
 func embeddedLibraryHash() string {
@@ -112,7 +114,7 @@ func embeddedLibraryOpen() (fs.File, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't create library name: %w", err)
 	}
-	fullPath := filepath.Join(root, filename)
+	fullPath := path.Join(root, filename)
 	file, err := libs.Open(fullPath)
 	if err != nil {
 		return nil, fmt.Errorf("can't open embedded library: %w", err)
