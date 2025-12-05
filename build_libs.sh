@@ -61,13 +61,7 @@ PLATFORM="${OS}_${ARCH}${TURSO_RS_LIBC_VARIANT}"
 TURSO_GO_LIB_PATH="${TURSO_GO_LIB_DIR}/${PLATFORM}"
 
 case "$OS" in
-  linux)
-    if [[ "$TURSO_RS_LIBC_VARIANT" == "_musl" ]]; then
-      OUTPUT_NAME="lib${TURSO_RS_PACKAGE}.a"
-    else
-      OUTPUT_NAME="lib${TURSO_RS_PACKAGE}.so"
-    fi
-    ;;
+  linux)   OUTPUT_NAME="lib${TURSO_RS_PACKAGE}.so" ;;
   darwin)  OUTPUT_NAME="lib${TURSO_RS_PACKAGE}.dylib" ;;
   windows) OUTPUT_NAME="${TURSO_RS_PACKAGE}.dll" ;;
 esac
@@ -75,6 +69,8 @@ esac
 # Set Rust target for musl builds
 RUST_TARGET=""
 if [[ "$TURSO_RS_LIBC_VARIANT" == "_musl" ]]; then
+  # https://github.com/rust-lang/rust/issues/59302
+  export RUSTFLAGS="-C target-feature=-crt-static"
   case "$ARCH" in
     amd64) RUST_TARGET="x86_64-unknown-linux-musl" ;;
     arm64) RUST_TARGET="aarch64-unknown-linux-musl" ;;

@@ -107,6 +107,7 @@ jobs:
         shell: bash
         if: runner.os == 'Windows'
         run: |
+          set TURSO_RS_BUILD_REF=${{ github.event.inputs.turso_ref }}
           ./build_libs.cmd
           ./hash_libs.cmd
 

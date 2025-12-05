@@ -6,3 +6,7 @@ import "embed"
 
 //go:embed libs/linux_amd64_musl/*
 var libs embed.FS
+
+func init() {
+	isMusl = true
+}

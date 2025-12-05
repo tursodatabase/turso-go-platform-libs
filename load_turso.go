@@ -6,13 +6,14 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 )
 
 const LibraryName = "libturso_sync_sdk_kit"
+
+var isMusl = false
 
 type LibraryLoadStrategy string
 
@@ -66,34 +67,12 @@ func LoadTursoLibrary(config LoadTursoLibraryConfig) (handle uintptr, err error)
 	return library, nil
 }
 
-// isMuslLibc detects if the system is using musl libc (Alpine Linux, Void Linux, etc.)
-func isMuslLibc() bool {
-	// Check for Alpine release file
-	if _, err := os.Stat("/etc/alpine-release"); err == nil {
-		return true
-	}
-
-	// Check ldd output for musl - more reliable for detecting any musl-based system
-	cmd := exec.Command("ldd", "--version")
-	if output, err := cmd.CombinedOutput(); err == nil {
-		if strings.Contains(strings.ToLower(string(output)), "musl") {
-			return true
-		}
-	}
-
-	return false
-}
-
 func libraryFilename() (string, error) {
 	switch runtime.GOOS {
 	case "darwin":
 		return "libturso_sync_sdk_kit.dylib", nil
 	case "linux":
-		if isMuslLibc() {
-			return "libturso_sync_sdk_kit.a", nil
-		} else {
-			return "libturso_sync_sdk_kit.so", nil
-		}
+		return "libturso_sync_sdk_kit.so", nil
 	case "windows":
 		return "turso_sync_sdk_kit.dll", nil
 	default:
@@ -102,7 +81,7 @@ func libraryFilename() (string, error) {
 }
 
 func embeddedLibraryPath() (string, error) {
-	if runtime.GOOS == "linux" && isMuslLibc() {
+	if runtime.GOOS == "linux" && isMusl {
 		return filepath.Join("libs", fmt.Sprintf("%v_%v_musl", runtime.GOOS, runtime.GOARCH)), nil
 	}
 	return filepath.Join("libs", fmt.Sprintf("%v_%v", runtime.GOOS, runtime.GOARCH)), nil
