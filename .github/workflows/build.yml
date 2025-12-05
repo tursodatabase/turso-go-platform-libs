@@ -33,11 +33,11 @@ jobs:
           - os: ubuntu-latest
             container: alpine:latest
             musl_tag: true
-            name_suffix: " (Alpine x64)"
+            name_suffix: " (Alpine AMD64)"
           - os: ubuntu-24.04-arm
+            container: alpine:latest
             musl_tag: true
-            build_musl: true
-            name_suffix: " (musl cross-compile)"
+            name_suffix: " (Alpine ARM64)"
 
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
@@ -102,14 +102,6 @@ jobs:
 
           echo "After build, libs/ contains:"
           find libs -maxdepth 3 -type f || true
-      
-      - name: Build cdylib (release)
-        shell: bash
-        if: runner.os == 'Windows'
-        run: |
-          set TURSO_RS_BUILD_REF=${{ github.event.inputs.turso_ref }}
-          ./build_libs.cmd
-          ./hash_libs.cmd
 
       - name: run test
         if: matrix.musl_tag == true
