@@ -213,8 +213,14 @@ jobs:
           # Try to fetch existing branch if present
           if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
             echo "Branch $BRANCH exists on remote — checking it out."
+
+            echo "Stashing local changes before checkout..."
+            git stash push -u -m "gha-temp-stash"
+
             git fetch origin "$BRANCH":"$BRANCH"
             git checkout "$BRANCH"
+
+            git stash pop
           else
             echo "Branch $BRANCH does not exist — creating it."
             git checkout -b "$BRANCH"
