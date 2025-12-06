@@ -228,6 +228,12 @@ jobs:
         run: |
           set -euo pipefail
 
+          if [[ "$TURSO_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([\-+][0-9A-Za-z\.-]+)?$ ]]; then
+            BRANCH="${TURSO_REF}"
+          else
+            BRANCH="turso-branch-${TURSO_REF}"
+          fi
+
           echo "Staging changes..."
           git add libs
 
