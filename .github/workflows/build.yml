@@ -155,6 +155,8 @@ jobs:
           fetch-depth: 0
 
       - name: Switch to new branch
+        env:
+          TURSO_REF: ${{ github.event.inputs.turso_ref }}
         shell: bash
         run: |
           set -euo pipefail
