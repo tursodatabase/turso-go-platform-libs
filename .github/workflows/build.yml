@@ -154,6 +154,34 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Switch to new branch
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Determine branch name based on ref type
+          if [[ "$TURSO_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([\-+][0-9A-Za-z\.-]+)?$ ]]; then
+            BRANCH="${TURSO_REF}"
+          else
+            BRANCH="turso-branch-${TURSO_REF}"
+          fi
+
+          echo "Target branch: $BRANCH"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Try to fetch existing branch if present
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo "Branch $BRANCH exists on remote — checking it out."
+
+            git fetch origin "$BRANCH":"$BRANCH"
+            git checkout "$BRANCH"
+          else
+            echo "Branch $BRANCH does not exist — creating it."
+            git checkout -b "$BRANCH"
+          fi
+
       - uses: actions/download-artifact@v4
         with:
           path: _libs_artifacts
@@ -197,34 +225,6 @@ jobs:
           TURSO_REF: ${{ github.event.inputs.turso_ref }}
         run: |
           set -euo pipefail
-
-          # Determine branch name based on ref type
-          if [[ "$TURSO_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([\-+][0-9A-Za-z\.-]+)?$ ]]; then
-            BRANCH="${TURSO_REF}"
-          else
-            BRANCH="turso-branch-${TURSO_REF}"
-          fi
-
-          echo "Target branch: $BRANCH"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Try to fetch existing branch if present
-          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
-            echo "Branch $BRANCH exists on remote — checking it out."
-
-            echo "Stashing local changes before checkout..."
-            git stash push -u -m "gha-temp-stash"
-
-            git fetch origin "$BRANCH":"$BRANCH"
-            git checkout "$BRANCH"
-
-            git stash pop
-          else
-            echo "Branch $BRANCH does not exist — creating it."
-            git checkout -b "$BRANCH"
-          fi
 
           echo "Staging changes..."
           git add libs
