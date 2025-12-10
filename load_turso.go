@@ -219,7 +219,7 @@ func librarySystemSearch() (string, error) {
 			}
 		}
 		return "", fmt.Errorf("library file %v not found at paths listed in PATH env var", filename)
-	case "darwin", "linux":
+	case "linux":
 		paths := append(strings.Split(os.Getenv("LD_LIBRARY_PATH"), ":"), cwd)
 		for _, path := range paths {
 			libPath := filepath.Join(path, filename)
@@ -228,6 +228,15 @@ func librarySystemSearch() (string, error) {
 			}
 		}
 		return "", fmt.Errorf("library file %v not found at paths listed in LD_LIBRARY_PATH env var", filename)
+	case "darwin":
+		paths := append(strings.Split(os.Getenv("DYLD_LIBRARY_PATH"), ":"), cwd)
+		for _, path := range paths {
+			libPath := filepath.Join(path, filename)
+			if _, err := os.Stat(libPath); err == nil {
+				return libPath, nil
+			}
+		}
+		return "", fmt.Errorf("library file %v not found at paths listed in DYLD_LIBRARY_PATH env var", filename)
 	default:
 		return "", fmt.Errorf("%v platform is not supported", runtime.GOOS)
 	}
