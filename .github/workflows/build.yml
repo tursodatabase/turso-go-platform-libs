@@ -164,11 +164,7 @@ jobs:
           set -euo pipefail
 
           # Determine branch name based on ref type
-          if [[ "$TURSO_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([\-+][0-9A-Za-z\.-]+)?$ ]]; then
-            BRANCH="${TURSO_REF}"
-          else
-            BRANCH="turso-branch-${TURSO_REF}"
-          fi
+          BRANCH="turso-branch-${TURSO_REF}"
 
           echo "Target branch: $BRANCH"
 
@@ -230,11 +226,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ "$TURSO_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([\-+][0-9A-Za-z\.-]+)?$ ]]; then
-            BRANCH="${TURSO_REF}"
-          else
-            BRANCH="turso-branch-${TURSO_REF}"
-          fi
+          BRANCH="turso-branch-${TURSO_REF}"
 
           echo "Staging changes..."
           git add libs
@@ -248,3 +240,8 @@ jobs:
 
           echo "Pushing branch: $BRANCH"
           git push --set-upstream origin "$BRANCH"
+
+          if [[ "$TURSO_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([\-+][0-9A-Za-z\.-]+)?$ ]]; then
+            git tag "$TURSO_REF"
+            git push --tags
+          else
