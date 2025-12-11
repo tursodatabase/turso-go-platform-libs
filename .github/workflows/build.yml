@@ -244,4 +244,4 @@ jobs:
           if [[ "$TURSO_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([\-+][0-9A-Za-z\.-]+)?$ ]]; then
             git tag "$TURSO_REF"
             git push --tags
-          else
+          fi
