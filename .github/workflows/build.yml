@@ -10,6 +10,8 @@ on:
         description: 'push changes to the repo'
         required: true
         type: boolean
+      nonce:
+        description: 'some unique nonce'
 
 permissions:
   contents: write
@@ -20,7 +22,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build (${{ matrix.os }}${{ matrix.name_suffix || '' }})
+    name: Build (${{ matrix.os }}${{ matrix.name_suffix || '' }}, nonce=${{ github.event.inputs.push_changes }})
     strategy:
       fail-fast: false
       matrix:
