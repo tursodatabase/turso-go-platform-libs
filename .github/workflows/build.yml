@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build (${{ matrix.os }}${{ matrix.name_suffix || '' }}, nonce=${{ github.event.inputs.push_changes }})
+    name: Build (${{ matrix.os }}${{ matrix.name_suffix || '' }}, nonce=${{ github.event.inputs.nonce }})
     strategy:
       fail-fast: false
       matrix:
