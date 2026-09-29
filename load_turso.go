@@ -72,7 +72,7 @@ func libraryFilename() (string, error) {
 	switch runtime.GOOS {
 	case "darwin":
 		return "libturso_sync_sdk_kit.dylib", nil
-	case "linux":
+	case "linux", "freebsd":
 		return "libturso_sync_sdk_kit.so", nil
 	case "windows":
 		return "turso_sync_sdk_kit.dll", nil
@@ -219,7 +219,7 @@ func librarySystemSearch() (string, error) {
 			}
 		}
 		return "", fmt.Errorf("library file %v not found at paths listed in PATH env var", filename)
-	case "linux":
+	case "linux", "freebsd":
 		paths := append(strings.Split(os.Getenv("LD_LIBRARY_PATH"), ":"), cwd)
 		for _, path := range paths {
 			libPath := filepath.Join(path, filename)

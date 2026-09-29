@@ -23,6 +23,7 @@ echo "UNAME_M: $UNAME_M"
 
 case "$UNAME_S" in
   Linux*)  OS=linux  ;;
+  FreeBSD*) OS=freebsd ;;
   Darwin*) OS=darwin ;;
   MINGW*|MSYS*|CYGWIN*) OS=windows ;;
   *) echo "Unsupported OS: $UNAME_S"; exit 1 ;;
@@ -61,7 +62,7 @@ PLATFORM="${OS}_${ARCH}${TURSO_RS_LIBC_VARIANT}"
 TURSO_GO_LIB_PATH="${TURSO_GO_LIB_DIR}/${PLATFORM}"
 
 case "$OS" in
-  linux)   OUTPUT_NAME="lib${TURSO_RS_PACKAGE}.so" ;;
+  linux|freebsd) OUTPUT_NAME="lib${TURSO_RS_PACKAGE}.so" ;;
   darwin)  OUTPUT_NAME="lib${TURSO_RS_PACKAGE}.dylib" ;;
   windows) OUTPUT_NAME="${TURSO_RS_PACKAGE}.dll" ;;
 esac
