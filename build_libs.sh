@@ -30,14 +30,14 @@ case "$UNAME_S" in
 esac
 
 if [[ "$OS" == "windows" ]]; then
+  # cygwin reports x86_64 even for windows on ARM
   case "$UNAME_S" in
     *ARM64)  ARCH=arm64  ;;
     *) ARCH=amd64 ;;
   esac
 else
-  # cygwin reports x86_64 even for windows on ARM
   case "$UNAME_M" in
-    x86_64) ARCH=amd64 ;;
+    x86_64|amd64) ARCH=amd64 ;;
     arm64|aarch64) ARCH=arm64 ;;
     i386|i686) ARCH=386 ;;
     *) echo "Unsupported arch: $UNAME_M"; exit 1 ;;
