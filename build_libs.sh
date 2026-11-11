@@ -112,7 +112,7 @@ git clone --single-branch --depth 1 --branch $TURSO_RS_BUILD_REF $TURSO_RS_REPO 
 pushd $TURSO_RS_BUILD_DIR
 echo "Building ${TURSO_RS_PACKAGE} ($TURSO_RS_BUILD_PROFILE) for ${PLATFORM}"
 export CARGO_ARGS="${CARGO_ARGS_ARR[@]}"
-cargo build "${CARGO_ARGS_ARR[@]}" --package "${TURSO_RS_PACKAGE}"
+cargo build "${CARGO_ARGS_ARR[@]}" --package "${TURSO_RS_PACKAGE}" --features fts
 popd
 
 

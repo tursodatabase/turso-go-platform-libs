@@ -77,7 +77,7 @@ if errorlevel 1 (
 :: --------------------------------
 pushd "%TURSO_RS_BUILD_DIR%"
 echo Building %TURSO_RS_PACKAGE% (%TURSO_RS_BUILD_PROFILE%) for %PLATFORM%
-cargo build --profile "%TURSO_RS_BUILD_PROFILE%" --package "%TURSO_RS_PACKAGE%"
+cargo build --profile "%TURSO_RS_BUILD_PROFILE%" --package "%TURSO_RS_PACKAGE%" --features fts
 if errorlevel 1 (
     echo Cargo build failed
     popd
